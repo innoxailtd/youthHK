@@ -23,11 +23,31 @@ export function ArticleDetail({ article }: { article: Article }) {
           priority
         />
       </div>
-      <div className="mt-8 space-y-5 text-base leading-8 text-foreground/90">
-        {article.body.map((paragraph) => (
-          <p key={paragraph}>{paragraph}</p>
-        ))}
-      </div>
+      {article.body.length > 0 ? (
+        <div className="mt-8 space-y-5 text-base leading-8 text-foreground/90">
+          {article.body.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+        </div>
+      ) : null}
+      {article.gallery?.length ? (
+        <div className="mt-10 space-y-6">
+          {article.gallery.map((src, index) => (
+            <div
+              key={src}
+              className="overflow-hidden rounded-2xl ring-1 ring-foreground/10"
+            >
+              <Image
+                src={src}
+                alt={`${article.title} ${index + 1}`}
+                width={1200}
+                height={1600}
+                className="h-auto w-full"
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
     </article>
   );
 }

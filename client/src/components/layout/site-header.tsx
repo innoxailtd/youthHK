@@ -29,7 +29,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { site } from "@/lib/data/site";
-import { navigation } from "@/lib/nav";
+import { isFileHref, navigation } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
@@ -62,11 +62,11 @@ export function SiteHeader() {
               {site.phones.join(" / ")}
             </a>
             <a
-              href={`mailto:${site.email}`}
+              href={`mailto:${site.emails[0]}`}
               className="flex items-center gap-1.5 transition-colors hover:text-white"
             >
               <MailIcon className="size-3" />
-              {site.email}
+              {site.emails[0]}
             </a>
           </div>
         </div>
@@ -111,7 +111,19 @@ export function SiteHeader() {
                       <ul className="grid w-48 gap-0.5 p-1">
                         {item.children.map((child) => (
                           <li key={child.href}>
-                            <NavigationMenuLink render={<Link href={child.href} />}>
+                            <NavigationMenuLink
+                              render={
+                                isFileHref(child.href) ? (
+                                  <a
+                                    href={child.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  />
+                                ) : (
+                                  <Link href={child.href} />
+                                )
+                              }
+                            >
                               {child.title}
                             </NavigationMenuLink>
                           </li>
@@ -168,10 +180,19 @@ export function SiteHeader() {
                               <SheetClose
                                 key={child.href}
                                 render={
-                                  <Link
-                                    href={child.href}
-                                    className="text-muted-foreground hover:text-foreground"
-                                  />
+                                  isFileHref(child.href) ? (
+                                    <a
+                                      href={child.href}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-muted-foreground hover:text-foreground"
+                                    />
+                                  ) : (
+                                    <Link
+                                      href={child.href}
+                                      className="text-muted-foreground hover:text-foreground"
+                                    />
+                                  )
                                 }
                               >
                                 {child.title}

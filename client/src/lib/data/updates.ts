@@ -5,7 +5,15 @@ export type Article = {
   excerpt: string;
   image: string;
   body: string[];
+  gallery?: string[];
 };
+
+function numbered(dir: string, count: number, ext: string) {
+  return Array.from(
+    { length: count },
+    (_, index) => `${dir}/${String(index + 1).padStart(2, "0")}${ext}`,
+  );
+}
 
 export const updates: Article[] = [
   {
@@ -14,7 +22,8 @@ export const updates: Article[] = [
     date: "2025-09-23",
     excerpt:
       "為慶祝中華人民共和國成立76周年暨香港青年會成立三十周年，本會於9月20日在太平山山頂廣場舉行第三屆躍動山嶺國慶跑2025。",
-    image: "/images/updates/mountain-run-2025.jpg",
+    image: "/images/home/thumb-run-2025.jpg",
+    gallery: numbered("/images/updates/run-2025-report", 8, ".png"),
     body: [
       "為慶祝中華人民共和國成立76周年暨香港青年會成立三十周年，香港青年會於9月20日在香港島太平山山頂廣場舉行了第三屆躍動山嶺國慶跑2025活動。此次活動是民政及青年事務局「青年節@HK」伙伴活動、第十四屆中西區體育節支持活動，以及香港青年會三十周年重點慶祝活動。",
       "除了青年越野跑賽事，現場更設共融盃以支持弱勢社群，以及政府部門盃邀請各紀律部隊同場競技。現場超過六百名青年及市民熱情參與，氣氛高漲。",
@@ -28,7 +37,7 @@ export const updates: Article[] = [
     date: "2025-06-17",
     excerpt:
       "為慶祝國慶及香港青年會成立30週年，第三屆躍動山嶺國慶跑將於2025年9月20日隆重舉行。",
-    image: "/images/updates/mountain-run-2025.jpg",
+    image: "/images/home/thumb-run-2025.jpg",
     body: [
       "為慶祝國慶及香港青年會成立30週年，第三屆躍動山嶺國慶跑將於2025年9月20日隆重舉行。大會希望繼續透過跑步這項大眾化的運動帶出社會共融的正面信息，推廣全民運動的風氣，同時讓公眾對香港的自然風景有更多認識。",
       "今屆除了最受歡迎的3公里賽事及專業性十足的20公里賽事，今年仲特別增設10公里賽事，讓更多不同運動經驗的跑手挑戰自己。",
@@ -70,6 +79,70 @@ export const updates: Article[] = [
     body: [
       "香港青年會舉辦青年週末劇場之「長空之王」青年電影欣賞會，邀請青年朋友一同走進戲院，感受航空報國的青春故事。",
       "活動旨在以文化藝術連繫青年，在輕鬆的週末時光中交流所思所感，凝聚愛國愛港力量。",
+    ],
+  },
+  {
+    slug: "new-year-blessing",
+    title: "香港青年會祝國家昌盛，家庭幸福，人圓家圓國圓！",
+    date: "2023-09-29",
+    excerpt: "本會祝願國家昌盛，家庭幸福，人圓家圓國圓。",
+    image: "/images/updates/new-year.jpg",
+    body: [],
+  },
+  {
+    slug: "mountain-run-2023",
+    title: "躍動山嶺國慶跑",
+    date: "2023-09-25",
+    excerpt:
+      "首屆躍動山嶺國慶跑於2023年9月30日在山頂舉行，分為20公里挑戰組及6公里樂融組。",
+    image: "/images/updates/national-day-run.jpg",
+    gallery: ["/images/updates/run-2023-2.jpg"],
+    body: [
+      "首屆「躍動山嶺國慶跑」於2023年9月30日在山頂舉行，由 Heartbeat Adventures、Blue Mountain Sports、香港青年會及無疆界體育學院合辦。",
+      "賽事分為20公里挑戰組及6公里樂融組，歡迎跑手及青年朋友一同以跑步慶祝國慶，欣賞香港山嶺風景。",
+    ],
+  },
+  {
+    slug: "island-youth-festival",
+    title: "港島青年節啟動禮－青年齊「樂」區·慶回歸街頭音樂會",
+    date: "2023-06-12",
+    excerpt:
+      "港島青年節啟動禮以街頭音樂會慶祝回歸，邀請青年走進社區、齊樂同行。",
+    image: "/images/updates/island-youth.jpg",
+    body: [
+      "本會參與港島青年節啟動禮，舉辦青年齊「樂」區·慶回歸街頭音樂會，與各界青年一同慶祝香港回歸祖國。",
+    ],
+  },
+  {
+    slug: "gba-youth-trip",
+    title: "「閃耀大灣區」三大平台青年探索之旅",
+    date: "2024-07-11",
+    excerpt:
+      "讓青年把握發展機遇，透過廣州、佛山的風土人情，展現立體、創新且精彩的大灣區。",
+    image: "/images/updates/gba.png",
+    body: [
+      "「閃耀大灣區」三大平台青年探索之旅，讓青年把握發展機遇，同時透過廣州、佛山的風土人情，向青年展現一個立體、創新且精彩萬分的大灣區。",
+    ],
+  },
+  {
+    slug: "defense-education-tour",
+    title: "「夢起東方·復興圖強」國防教育考察團",
+    date: "2023-05-10",
+    excerpt:
+      "展覽主題為「夢起東方」，設中國夢、強軍夢、香江衛士三個主題展廳。",
+    image: "/images/updates/defense.jpg",
+    body: [
+      "本會舉辦「夢起東方·復興圖強」國防教育考察團。展覽主題為「夢起東方」，設中國夢、強軍夢、香江衛士三個主題展廳，讓青年加深對國防建設與國家發展的認識。",
+    ],
+  },
+  {
+    slug: "customs-visit",
+    title: "參觀海關總部",
+    date: "2023-03-24",
+    excerpt: "活動地點：海關總部大樓（北角渣華道222號）。",
+    image: "/images/updates/customs.jpg",
+    body: [
+      "本會組織青年參觀海關總部大樓（北角渣華道222號），認識海關工作與守法意識。",
     ],
   },
 ];

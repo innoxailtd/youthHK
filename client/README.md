@@ -21,5 +21,5 @@ npm run dev
 - `/newsletters` 最新会讯
 - `/updates` 最新动态
 - `/join` 线上入会
-- `/join/forms` 下载表格
+- `/forms/membership-application.pdf` 会员／义工申请表
 - `/contact` 联络我们

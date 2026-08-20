@@ -6,14 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const forms = [
   {
-    title: "會員入會申請表",
-    description: "個人會員申請用。可先下載列印，填妥後交回本會秘書處。",
+    title: "會員／義工申請表",
+    description: "個人會員及義工申請用。可先下載列印，填妥後交回本會秘書處。",
     href: "/forms/membership-application.pdf",
-  },
-  {
-    title: "機構會員申請表",
-    description: "友好團體或機構申請合作／機構會員時使用。",
-    href: "/forms/organization-application.pdf",
   },
 ];
 
@@ -33,22 +28,27 @@ export default function JoinFormsPage() {
           { label: "下載表格" },
         ]}
       />
-      <div className="mx-auto grid max-w-6xl gap-5 px-4 py-14 md:grid-cols-2 md:px-6">
-        {forms.map((form) => (
-          <Card key={form.title}>
-            <CardHeader>
-              <CardTitle>{form.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm leading-7 text-muted-foreground">
-                {form.description}
-              </p>
-              <Button nativeButton={false} render={<a href={form.href} download />}>
-                下載 PDF
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="mx-auto max-w-6xl px-4 py-14 md:px-6">
+        <div className="max-w-xl">
+          {forms.map((form) => (
+            <Card key={form.title}>
+              <CardHeader>
+                <CardTitle>{form.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm leading-7 text-muted-foreground">
+                  {form.description}
+                </p>
+                <Button
+                  nativeButton={false}
+                  render={<a href={form.href} download />}
+                >
+                  下載 PDF
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </>
   );
