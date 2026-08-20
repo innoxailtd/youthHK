@@ -18,7 +18,7 @@ export function AboutIntro() {
   return (
     <section className="relative overflow-hidden py-20 md:py-24">
       <Image
-        src="/images/updates/mountain-run-2025.jpg"
+        src="/images/about/hero.jpg"
         alt=""
         fill
         className="object-cover"

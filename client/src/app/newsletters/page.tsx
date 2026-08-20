@@ -13,7 +13,6 @@ export default function NewslettersPage() {
     <>
       <PageHero
         title="最新會訊"
-        description="閱覽本會定期會訊，了解會務進展與會員消息。"
         crumbs={[
           { href: "/", label: "首頁" },
           { label: "最新會訊" },

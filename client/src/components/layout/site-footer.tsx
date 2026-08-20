@@ -119,14 +119,19 @@ export function SiteFooter() {
                   {site.phones.join(" / ")}
                 </a>
               </li>
-              <li className="flex items-center gap-2.5">
-                <MailIcon className="size-4 shrink-0 text-primary" />
-                <a
-                  href={`mailto:${site.email}`}
-                  className="transition-colors hover:text-white"
-                >
-                  {site.email}
-                </a>
+              <li className="flex items-start gap-2.5">
+                <MailIcon className="mt-1 size-4 shrink-0 text-primary" />
+                <span className="space-y-1">
+                  {site.emails.map((email) => (
+                    <a
+                      key={email}
+                      href={`mailto:${email}`}
+                      className="block transition-colors hover:text-white"
+                    >
+                      {email}
+                    </a>
+                  ))}
+                </span>
               </li>
             </ul>
           </div>

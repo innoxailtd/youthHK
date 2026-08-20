@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 
 import { PageHero } from "@/components/layout/page-hero";
 import { about } from "@/lib/data/about";
@@ -21,6 +22,16 @@ export default function AboutPage() {
         ]}
       />
       <article className="mx-auto max-w-6xl px-4 py-14 md:px-6">
+        <div className="mb-10 overflow-hidden rounded-2xl shadow-lg shadow-foreground/8">
+          <Image
+            src="/images/about/hero.jpg"
+            alt="關於香港青年會"
+            width={1600}
+            height={900}
+            className="h-auto w-full"
+            priority
+          />
+        </div>
         <p className="text-lg leading-8">{about.lead}</p>
         <p className="mt-4 text-base leading-8 text-muted-foreground">
           {about.mission}

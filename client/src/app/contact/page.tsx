@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
+import Image from "next/image";
+import { MailIcon, MapPinIcon, PhoneIcon, PrinterIcon } from "lucide-react";
 
 import { PageHero } from "@/components/layout/page-hero";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,21 +14,33 @@ const contacts = [
   {
     title: "會址",
     value: site.address,
-    href: "https://maps.google.com/?q=灣仔駱克道116號嘉洛商業大廈",
+    href: `https://maps.google.com/?q=${encodeURIComponent(site.address)}`,
     icon: MapPinIcon,
   },
   {
     title: "電話",
-    value: site.phones.join(" / "),
+    value: site.phones.map((phone) => `(852) ${phone}`).join(" / "),
     href: `tel:${site.phones[0]}`,
     icon: PhoneIcon,
   },
   {
+    title: "傳真",
+    value: `(852) ${site.fax}`,
+    href: `tel:${site.fax}`,
+    icon: PrinterIcon,
+  },
+  {
     title: "電郵",
-    value: site.email,
-    href: `mailto:${site.email}`,
+    value: site.emails.join(" / "),
+    href: `mailto:${site.emails[0]}`,
     icon: MailIcon,
   },
+];
+
+const photos = [
+  { src: "/images/contact/office.jpg", alt: "香港青年會會址" },
+  { src: "/images/contact/social-1.webp", alt: "香港青年會社交平台" },
+  { src: "/images/contact/social-2.webp", alt: "香港青年會聯絡二維碼" },
 ];
 
 export default function ContactPage() {
@@ -42,7 +55,7 @@ export default function ContactPage() {
         ]}
       />
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-14 md:px-6">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {contacts.map((item) => (
             <Card
               key={item.title}
@@ -67,10 +80,28 @@ export default function ContactPage() {
             </Card>
           ))}
         </div>
+
+        <div className="grid gap-5 sm:grid-cols-3">
+          {photos.map((photo) => (
+            <div
+              key={photo.src}
+              className="overflow-hidden rounded-2xl ring-1 ring-foreground/10"
+            >
+              <Image
+                src={photo.src}
+                alt={photo.alt}
+                width={480}
+                height={420}
+                className="h-auto w-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+
         <div className="overflow-hidden rounded-2xl shadow-lg shadow-foreground/8 ring-1 ring-foreground/10">
           <iframe
             title="香港青年會會址"
-            src="https://maps.google.com/maps?q=灣仔駱克道116號嘉洛商業大廈&output=embed"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(site.address)}&output=embed`}
             className="h-80 w-full border-0"
             loading="lazy"
           />
