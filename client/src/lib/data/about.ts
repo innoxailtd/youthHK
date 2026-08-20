@@ -21,7 +21,7 @@ export const about = {
       description: "透過體育、文娛、公益與共融活動，回饋社區、關愛弱勢。",
     },
     {
-      title: "認識祖國",
+      title: "促進交流",
       description: "促進港內交流，增進青年對國家發展與民族觀念的認識。",
     },
   ],
