@@ -1,27 +1,36 @@
-import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-import { joinSchema } from "@/lib/validations/join";
+import { joinSchema } from "./validations/join";
 
-export async function POST(request: Request) {
-  const json = await request.json().catch(() => null);
+type JoinEnv = {
+  RESEND_API_KEY?: string;
+  JOIN_FROM_EMAIL?: string;
+  JOIN_TO_EMAIL?: string;
+};
+
+export async function handleJoinRequest(
+  request: Request,
+  env: JoinEnv = {
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    JOIN_FROM_EMAIL: process.env.JOIN_FROM_EMAIL,
+    JOIN_TO_EMAIL: process.env.JOIN_TO_EMAIL,
+  },
+): Promise<Response> {
+  const json: unknown = await request.json().catch(() => null);
   const parsed = joinSchema.safeParse(json);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { message: "請檢查表單內容後再提交。" },
-      { status: 400 },
-    );
+    return jsonResponse({ message: "請檢查表單內容後再提交。" }, 400);
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.JOIN_FROM_EMAIL;
-  const to = process.env.JOIN_TO_EMAIL ?? "info.hkya@gmail.com";
+  const apiKey = env.RESEND_API_KEY;
+  const from = env.JOIN_FROM_EMAIL;
+  const to = env.JOIN_TO_EMAIL ?? "info.hkya@gmail.com";
 
   if (!apiKey || !from) {
-    return NextResponse.json(
+    return jsonResponse(
       { message: "郵件服務尚未設定，請稍後再試或改用電郵聯絡。" },
-      { status: 500 },
+      500,
     );
   }
 
@@ -60,14 +69,18 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json(
-      { message: "發送申請失敗，請稍後再試。" },
-      { status: 502 },
-    );
+    return jsonResponse({ message: "發送申請失敗，請稍後再試。" }, 502);
   }
 
-  return NextResponse.json({
+  return jsonResponse({
     message: "申請已送出，本會將盡快以電郵與您聯絡。",
+  });
+}
+
+function jsonResponse(body: { message: string }, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
   });
 }
 
