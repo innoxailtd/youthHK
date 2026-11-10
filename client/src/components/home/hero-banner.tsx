@@ -15,11 +15,14 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { contentItemsToBanners } from "@/lib/cms/types";
+import { useCmsContent } from "@/lib/cms/use-cms-content";
 import { banners } from "@/lib/data/gallery";
 import { site } from "@/lib/data/site";
 import { cn } from "@/lib/utils";
 
 export function HeroBanner() {
+  const slides = useCmsContent("banner", banners, contentItemsToBanners);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const autoplay = useRef(
@@ -45,7 +48,7 @@ export function HeroBanner() {
         className="w-full"
       >
         <CarouselContent className="-ml-0">
-          {banners.map((banner) => (
+          {slides.map((banner) => (
             <CarouselItem key={banner.title} className="pl-0">
               <div className="relative h-[460px] w-full sm:h-[540px] md:h-[620px]">
                 <Image
@@ -103,7 +106,7 @@ export function HeroBanner() {
         <CarouselNext className="right-4 hidden border-white/40 bg-white/15 text-white backdrop-blur hover:bg-white hover:text-foreground md:flex" />
 
         <div className="absolute inset-x-0 bottom-7 flex justify-center gap-2">
-          {banners.map((banner, index) => (
+          {slides.map((banner, index) => (
             <button
               key={banner.title}
               type="button"

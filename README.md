@@ -18,7 +18,13 @@ cd client
 npm run pages:dev
 ```
 
-在 `client/.env.local` 或 Cloudflare Pages 环境变量里填入 `RESEND_API_KEY`、`JOIN_FROM_EMAIL` 与 `JOIN_TO_EMAIL` 后，线上入会表单才会真正发信。
+在 `client/.dev.vars`（Wrangler 会读取）或 Cloudflare Pages 环境变量里填入：
+
+- `RESEND_API_KEY`、`JOIN_FROM_EMAIL`、`JOIN_TO_EMAIL`：入会发信
+- `ADMIN_PASSWORD`：`/admin` 后台密码
+- `ADMIN_SESSION_SECRET`：登录会话签名，不填时会改用 `ADMIN_PASSWORD`
+
+后台内容和上传图片都存在一个 Cloudflare KV 命名空间（`CMS_KV`）。部署前先创建该命名空间，并把 `client/wrangler.jsonc` 里的 `id` 换成真实 ID。本地 `pnpm pages:dev` 会使用 Wrangler 的本地 KV，第一次打开会写入现有静态内容。
 
 ## 部署到 Cloudflare Pages
 
@@ -32,6 +38,8 @@ npm run pages:dev
    - `RESEND_API_KEY`
    - `JOIN_FROM_EMAIL`
    - `JOIN_TO_EMAIL`
+   - `ADMIN_PASSWORD`
+   - `ADMIN_SESSION_SECRET`
 4. **Settings → Functions** 兼容性标志加上 `nodejs_compat`（`wrangler.jsonc` 里已写好，Git 构建一般会自动带上）
 
 部署成功后会得到 `*.pages.dev` 地址，再在 Pages 项目里绑定自定义域名即可。

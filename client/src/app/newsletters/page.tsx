@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { ArticleList } from "@/components/content/article-list";
+import { CmsArticleList } from "@/components/content/cms-article-list";
 import { PageHero } from "@/components/layout/page-hero";
 import { newsletters } from "@/lib/data/newsletters";
 
@@ -19,7 +19,7 @@ export default function NewslettersPage() {
         ]}
       />
       <div className="mx-auto max-w-6xl px-4 py-14 md:px-6">
-        <ArticleList items={newsletters} basePath="/newsletters" />
+        <CmsArticleList type="newsletter" items={newsletters} basePath="/newsletters" />
       </div>
     </>
   );

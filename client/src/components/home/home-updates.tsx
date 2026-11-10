@@ -18,21 +18,32 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { contentItemsToArticles } from "@/lib/cms/types";
+import { useCmsContent } from "@/lib/cms/use-cms-content";
 import { newsletters } from "@/lib/data/newsletters";
 import { updates } from "@/lib/data/updates";
 import { formatDate } from "@/lib/utils";
 
-const latest = [
-  ...updates.map((item) => ({ ...item, href: `/updates/${item.slug}` })),
-  ...newsletters.map((item) => ({
-    ...item,
-    href: `/newsletters/${item.slug}`,
-  })),
-]
-  .sort((a, b) => b.date.localeCompare(a.date))
-  .slice(0, 8);
-
 export function HomeUpdates() {
+  const updateItems = useCmsContent("update", updates, contentItemsToArticles);
+  const newsletterItems = useCmsContent(
+    "newsletter",
+    newsletters,
+    contentItemsToArticles,
+  );
+  const latest = [
+    ...updateItems.map((item) => ({
+      ...item,
+      href: `/updates/view?slug=${encodeURIComponent(item.slug)}`,
+    })),
+    ...newsletterItems.map((item) => ({
+      ...item,
+      href: `/newsletters/view?slug=${encodeURIComponent(item.slug)}`,
+    })),
+  ]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 8);
+
   return (
     <section className="py-16 md:py-20">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
