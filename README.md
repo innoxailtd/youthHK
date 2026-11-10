@@ -24,7 +24,7 @@ npm run pages:dev
 - `ADMIN_PASSWORD`：`/admin` 后台密码
 - `ADMIN_SESSION_SECRET`：登录会话签名，不填时会改用 `ADMIN_PASSWORD`
 
-后台内容存在 Cloudflare D1（绑定名 `CMS_DB`），上传图片存在 R2（绑定名 `CMS_MEDIA`）。这两个绑定已经在 Pages 项目里配置好。本地 `pnpm pages:dev` 会使用 Wrangler 的本地 D1 和 R2，第一次打开会写入现有静态内容。
+后台内容存在 Cloudflare D1（绑定名 `CMS_DB`，数据库 `youth-hk-cms`），上传图片存在 R2（绑定名 `CMS_MEDIA`，存储桶 `youth-hk-cms-media`）。这两个绑定在 Pages 项目的 Settings → Bindings 里配置。`wrangler.jsonc` 不要写 `pages_build_output_dir`，否则 Git 部署会以该文件为准，把控制台里的 D1 / R2 绑定清掉。本地 `pnpm pages:dev` 会使用 Wrangler 的本地 D1 和 R2。
 
 ## 部署到 Cloudflare Pages
 
