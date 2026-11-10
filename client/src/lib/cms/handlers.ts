@@ -8,17 +8,17 @@ import {
 import {
   createContent,
   deleteContent,
-  getMedia,
   listContent,
-  putMedia,
   updateContent,
-  type CmsKv,
+  type CmsBucket,
+  type CmsDatabase,
 } from "./store";
 import { isContentType } from "./types";
 import { parseContentWrite } from "./validate";
 
 export type CmsEnv = {
-  CMS_KV?: CmsKv;
+  CMS_DB?: CmsDatabase;
+  CMS_MEDIA?: CmsBucket;
   ADMIN_PASSWORD?: string;
   ADMIN_SESSION_SECRET?: string;
 };
@@ -74,13 +74,13 @@ async function requireUser(request: Request, env: CmsEnv) {
 }
 
 function requireStore(env: CmsEnv) {
-  if (!env.CMS_KV) return json({ error: "內容儲存尚未設定" }, 503);
+  if (!env.CMS_DB) return json({ error: "內容資料庫尚未設定" }, 503);
   return null;
 }
 
 export async function onContentGet({ request, env }: CmsContext) {
   const unavailable = requireStore(env);
-  if (unavailable || !env.CMS_KV) return unavailable ?? json({ error: "內容儲存尚未設定" }, 503);
+  if (unavailable || !env.CMS_DB) return unavailable ?? json({ error: "內容資料庫尚未設定" }, 503);
 
   const type = new URL(request.url).searchParams.get("type");
   if (!isContentType(type)) {
@@ -90,7 +90,7 @@ export async function onContentGet({ request, env }: CmsContext) {
     );
   }
 
-  const items = await listContent(env.CMS_KV, type);
+  const items = await listContent(env.CMS_DB, type);
   return json({ items });
 }
 
@@ -133,21 +133,21 @@ export async function onSessionGet({ request, env }: CmsContext) {
 
 export async function onAdminContentPost({ request, env }: CmsContext) {
   const rejected = requireOrigin(request) ?? (await requireUser(request, env)) ?? requireStore(env);
-  if (rejected || !env.CMS_KV) return rejected ?? json({ error: "內容儲存尚未設定" }, 503);
+  if (rejected || !env.CMS_DB) return rejected ?? json({ error: "內容資料庫尚未設定" }, 503);
 
   const parsed = parseContentWrite(await request.json().catch(() => null), "POST");
   if (!parsed.ok) {
     return json({ error: "內容驗證失敗", details: parsed.details }, 400);
   }
 
-  const item = await createContent(env.CMS_KV, parsed.value);
+  const item = await createContent(env.CMS_DB, parsed.value);
   if (!item) return json({ error: "儲存失敗" }, 500);
   return json({ item }, 201);
 }
 
 export async function onAdminContentPut({ request, env }: CmsContext) {
   const rejected = requireOrigin(request) ?? (await requireUser(request, env)) ?? requireStore(env);
-  if (rejected || !env.CMS_KV) return rejected ?? json({ error: "內容儲存尚未設定" }, 503);
+  if (rejected || !env.CMS_DB) return rejected ?? json({ error: "內容資料庫尚未設定" }, 503);
 
   const parsed = parseContentWrite(await request.json().catch(() => null), "PUT");
   if (!parsed.ok || !parsed.value.id) {
@@ -157,19 +157,19 @@ export async function onAdminContentPut({ request, env }: CmsContext) {
     );
   }
 
-  const item = await updateContent(env.CMS_KV, parsed.value.id, parsed.value);
+  const item = await updateContent(env.CMS_DB, parsed.value.id, parsed.value);
   if (!item) return json({ error: "找不到要編輯的內容" }, 404);
   return json({ item });
 }
 
 export async function onAdminContentDelete({ request, env }: CmsContext) {
   const rejected = requireOrigin(request) ?? (await requireUser(request, env)) ?? requireStore(env);
-  if (rejected || !env.CMS_KV) return rejected ?? json({ error: "內容儲存尚未設定" }, 503);
+  if (rejected || !env.CMS_DB) return rejected ?? json({ error: "內容資料庫尚未設定" }, 503);
 
   const id = new URL(request.url).searchParams.get("id")?.trim() ?? "";
   if (!id) return json({ error: "id 為必填" }, 400);
 
-  const deleted = await deleteContent(env.CMS_KV, id);
+  const deleted = await deleteContent(env.CMS_DB, id);
   if (!deleted) return json({ error: "找不到要刪除的內容" }, 404);
   return json({ deleted: true, id });
 }
@@ -177,7 +177,7 @@ export async function onAdminContentDelete({ request, env }: CmsContext) {
 export async function onUploadPost({ request, env }: CmsContext) {
   const rejected = requireOrigin(request) ?? (await requireUser(request, env));
   if (rejected) return rejected;
-  if (!env.CMS_KV) return json({ error: "內容儲存尚未設定" }, 503);
+  if (!env.CMS_MEDIA) return json({ error: "圖片儲存尚未設定" }, 503);
 
   const form = await request.formData().catch(() => null);
   const file = form?.get("file");
@@ -194,12 +194,14 @@ export async function onUploadPost({ request, env }: CmsContext) {
 
   const now = new Date();
   const key = `${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}/${crypto.randomUUID()}.${extension}`;
-  await putMedia(env.CMS_KV, key, await file.arrayBuffer(), file.type);
+  await env.CMS_MEDIA.put(key, await file.arrayBuffer(), {
+    httpMetadata: { contentType: file.type },
+  });
   return json({ url: `/media/${key}` });
 }
 
 export async function onMediaGet({ env, params }: CmsContext) {
-  if (!env.CMS_KV) return new Response("Not Found", { status: 404 });
+  if (!env.CMS_MEDIA) return new Response("Not Found", { status: 404 });
   const parts = Array.isArray(params?.path)
     ? params.path
     : params?.path
@@ -212,10 +214,13 @@ export async function onMediaGet({ env, params }: CmsContext) {
     return new Response("Not Found", { status: 404 });
   }
 
-  const object = await getMedia(env.CMS_KV, parts.join("/"));
+  const object = await env.CMS_MEDIA.get(parts.join("/"));
   if (!object) return new Response("Not Found", { status: 404 });
   const headers = new Headers();
-  headers.set("content-type", object.contentType);
+  headers.set(
+    "content-type",
+    object.httpMetadata?.contentType ?? "application/octet-stream",
+  );
   headers.set("cache-control", "public, max-age=31536000, immutable");
   return new Response(object.body, { headers });
 }

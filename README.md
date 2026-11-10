@@ -24,7 +24,7 @@ npm run pages:dev
 - `ADMIN_PASSWORD`：`/admin` 后台密码
 - `ADMIN_SESSION_SECRET`：登录会话签名，不填时会改用 `ADMIN_PASSWORD`
 
-后台内容和上传图片都存在一个 Cloudflare KV 命名空间（`CMS_KV`）。部署前先创建该命名空间，并把 `client/wrangler.jsonc` 里的 `id` 换成真实 ID。本地 `pnpm pages:dev` 会使用 Wrangler 的本地 KV，第一次打开会写入现有静态内容。
+后台内容存在 Cloudflare D1（绑定名 `CMS_DB`），上传图片存在 R2（绑定名 `CMS_MEDIA`）。这两个绑定已经在 Pages 项目里配置好。本地 `pnpm pages:dev` 会使用 Wrangler 的本地 D1 和 R2，第一次打开会写入现有静态内容。
 
 ## 部署到 Cloudflare Pages
 
