@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "pages:dev": "next build && wrangler pages dev --kv CMS_KV",
+    "pages:dev": "next build && wrangler pages dev --d1 CMS_DB --r2 CMS_MEDIA",
     "pages:deploy": "next build && wrangler pages deploy"
   },
   "dependencies": {

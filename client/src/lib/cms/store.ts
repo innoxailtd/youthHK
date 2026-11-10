@@ -1,34 +1,123 @@
 import { banners, gallery } from "../data/gallery";
 import { newsletters } from "../data/newsletters";
 import { updates } from "../data/updates";
-import { isContentItem, type ContentItem, type ContentType } from "./types";
+import type { ContentItem, ContentType } from "./types";
+import { isContentType } from "./types";
 import type { ContentWrite } from "./validate";
 
-const CONTENT_KEY = "content";
+export interface CmsDatabase {
+  exec(query: string): Promise<unknown>;
+  prepare(query: string): CmsStatement;
+}
 
-export interface CmsKv {
-  get(key: string, options: { type: "json" }): Promise<unknown>;
-  getWithMetadata(
-    key: string,
-    options: { type: "arrayBuffer" },
-  ): Promise<{
-    value: ArrayBuffer | null;
-    metadata: { contentType?: string } | null;
-  }>;
+interface CmsStatement {
+  bind(...values: unknown[]): CmsStatement;
+  all<T>(): Promise<{ results?: T[] }>;
+  first<T>(): Promise<T | null>;
+  run(): Promise<{ meta?: { changes?: number } }>;
+}
+
+export interface CmsBucket {
   put(
     key: string,
-    value: string | ArrayBuffer,
-    options?: { metadata?: { contentType?: string } },
-  ): Promise<void>;
+    value: ArrayBuffer,
+    options?: { httpMetadata?: { contentType?: string } },
+  ): Promise<unknown>;
+  get(
+    key: string,
+  ): Promise<{
+    body: ReadableStream;
+    httpMetadata?: { contentType?: string };
+  } | null>;
 }
+
+type ContentRow = {
+  id: string;
+  type: string;
+  slug: string | null;
+  title: string;
+  description: string;
+  date: string | null;
+  image: string | null;
+  href: string | null;
+  body: string;
+  gallery: string;
+  alt: string | null;
+  caption: string | null;
+  sort_order: number;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+const ready = new WeakMap<CmsDatabase, Promise<void>>();
 
 function timestamp() {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
-function buildSeed(): ContentItem[] {
+function parseList(value: string) {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function toItem(row: ContentRow): ContentItem | null {
+  if (!isContentType(row.type)) return null;
+  return {
+    id: row.id,
+    type: row.type,
+    slug: row.slug,
+    title: row.title,
+    description: row.description,
+    date: row.date,
+    image: row.image,
+    href: row.href,
+    body: parseList(row.body),
+    gallery: parseList(row.gallery),
+    alt: row.alt,
+    caption: row.caption,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function migrate(db: CmsDatabase) {
+  await db
+    .prepare(
+      "CREATE TABLE IF NOT EXISTS content (id TEXT PRIMARY KEY, type TEXT NOT NULL, slug TEXT, title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', date TEXT, image TEXT, href TEXT, body TEXT NOT NULL DEFAULT '[]', gallery TEXT NOT NULL DEFAULT '[]', alt TEXT, caption TEXT, sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT, updated_at TEXT)",
+    )
+    .run();
+  await db
+    .prepare(
+      "CREATE TABLE IF NOT EXISTS cms_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+    )
+    .run();
+}
+
+async function seed(db: CmsDatabase) {
+  const seeded = await db
+    .prepare("SELECT value FROM cms_meta WHERE key = 'seeded'")
+    .first<{ value: string }>();
+  if (seeded?.value === "1") return;
+
+  const count = await db
+    .prepare("SELECT COUNT(*) AS count FROM content")
+    .first<{ count: number }>();
+  if ((count?.count ?? 0) > 0) {
+    await db
+      .prepare("INSERT INTO cms_meta (key, value) VALUES ('seeded', '1')")
+      .run();
+    return;
+  }
+
   const now = timestamp();
-  const rows: Array<Omit<ContentItem, "id" | "createdAt" | "updatedAt" | "sortOrder">> = [
+  const rows: ContentWrite[] = [
     ...banners.map((banner) => ({
       type: "banner" as const,
       slug: null,
@@ -41,6 +130,7 @@ function buildSeed(): ContentItem[] {
       gallery: [],
       alt: null,
       caption: null,
+      sortOrder: 0,
     })),
     ...updates.map((article) => ({
       type: "update" as const,
@@ -54,6 +144,7 @@ function buildSeed(): ContentItem[] {
       gallery: article.gallery ?? [],
       alt: null,
       caption: null,
+      sortOrder: 0,
     })),
     ...newsletters.map((article) => ({
       type: "newsletter" as const,
@@ -67,6 +158,7 @@ function buildSeed(): ContentItem[] {
       gallery: article.gallery ?? [],
       alt: null,
       caption: null,
+      sortOrder: 0,
     })),
     ...gallery.map((item) => ({
       type: "gallery" as const,
@@ -76,107 +168,162 @@ function buildSeed(): ContentItem[] {
       date: null,
       image: item.src,
       href: null,
-      body: [] as string[],
-      gallery: [] as string[],
+      body: [],
+      gallery: [],
       alt: item.alt,
       caption: item.caption,
+      sortOrder: 0,
     })),
   ];
 
   const counts = new Map<ContentType, number>();
-  return rows.map((row) => {
+  for (const row of rows) {
     const index = counts.get(row.type) ?? 0;
     counts.set(row.type, index + 1);
-    return {
-      ...row,
-      id: `default:${row.type}:${index}`,
-      sortOrder: index,
-      createdAt: now,
-      updatedAt: now,
-    };
+    await db
+      .prepare(
+        `INSERT INTO content (
+          id, type, slug, title, description, date, image, href, body, gallery,
+          alt, caption, sort_order, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        `default:${row.type}:${index}`,
+        row.type,
+        row.slug,
+        row.title,
+        row.description,
+        row.date,
+        row.image,
+        row.href,
+        JSON.stringify(row.body),
+        JSON.stringify(row.gallery),
+        row.alt,
+        row.caption,
+        index,
+        now,
+        now,
+      )
+      .run();
+  }
+
+  await db
+    .prepare("INSERT INTO cms_meta (key, value) VALUES ('seeded', '1')")
+    .run();
+}
+
+export function prepareDatabase(db: CmsDatabase) {
+  let pending = ready.get(db);
+  if (!pending) {
+    pending = migrate(db)
+      .then(() => seed(db))
+      .catch((error: unknown) => {
+        ready.delete(db);
+        throw error;
+      });
+    ready.set(db, pending);
+  }
+  return pending;
+}
+
+export async function listContent(db: CmsDatabase, type: ContentType) {
+  await prepareDatabase(db);
+  const result = await db
+    .prepare(
+      `SELECT * FROM content
+       WHERE type = ?
+       ORDER BY sort_order ASC, updated_at DESC`,
+    )
+    .bind(type)
+    .all<ContentRow>();
+  return (result.results ?? []).flatMap((row) => {
+    const item = toItem(row);
+    return item ? [item] : [];
   });
 }
 
-async function loadAll(kv: CmsKv) {
-  const stored = await kv.get(CONTENT_KEY, { type: "json" });
-  if (stored === null) {
-    const seeded = buildSeed();
-    await kv.put(CONTENT_KEY, JSON.stringify(seeded));
-    return seeded;
-  }
-  return Array.isArray(stored) ? stored.filter(isContentItem) : [];
+export async function getContent(db: CmsDatabase, id: string) {
+  await prepareDatabase(db);
+  const row = await db
+    .prepare("SELECT * FROM content WHERE id = ?")
+    .bind(id)
+    .first<ContentRow>();
+  return row ? toItem(row) : null;
 }
 
-async function saveAll(kv: CmsKv, items: ContentItem[]) {
-  await kv.put(CONTENT_KEY, JSON.stringify(items));
-}
-
-function byType(items: ContentItem[], type: ContentType) {
-  return items
-    .filter((item) => item.type === type)
-    .sort((left, right) => {
-      if (left.sortOrder !== right.sortOrder) return left.sortOrder - right.sortOrder;
-      return (right.updatedAt ?? "").localeCompare(left.updatedAt ?? "");
-    });
-}
-
-export async function listContent(kv: CmsKv, type: ContentType) {
-  return byType(await loadAll(kv), type);
-}
-
-export async function createContent(kv: CmsKv, input: ContentWrite) {
-  const items = await loadAll(kv);
+export async function createContent(db: CmsDatabase, input: ContentWrite) {
+  await prepareDatabase(db);
   const now = timestamp();
-  const item: ContentItem = {
-    ...input,
-    id: crypto.randomUUID(),
-    createdAt: now,
-    updatedAt: now,
-  };
-  items.push(item);
-  await saveAll(kv, items);
-  return item;
+  const id = crypto.randomUUID();
+  await db
+    .prepare(
+      `INSERT INTO content (
+        id, type, slug, title, description, date, image, href, body, gallery,
+        alt, caption, sort_order, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      id,
+      input.type,
+      input.slug,
+      input.title,
+      input.description,
+      input.date,
+      input.image,
+      input.href,
+      JSON.stringify(input.body),
+      JSON.stringify(input.gallery),
+      input.alt,
+      input.caption,
+      input.sortOrder,
+      now,
+      now,
+    )
+    .run();
+  return getContent(db, id);
 }
 
-export async function updateContent(kv: CmsKv, id: string, input: ContentWrite) {
-  const items = await loadAll(kv);
-  const index = items.findIndex((item) => item.id === id);
-  if (index < 0) return null;
-  const current = items[index];
-  if (!current) return null;
-  const item: ContentItem = {
-    ...input,
-    id,
-    createdAt: current.createdAt,
-    updatedAt: timestamp(),
-  };
-  items[index] = item;
-  await saveAll(kv, items);
-  return item;
-}
-
-export async function deleteContent(kv: CmsKv, id: string) {
-  const items = await loadAll(kv);
-  const next = items.filter((item) => item.id !== id);
-  if (next.length === items.length) return false;
-  await saveAll(kv, next);
-  return true;
-}
-
-export async function putMedia(
-  kv: CmsKv,
-  key: string,
-  body: ArrayBuffer,
-  contentType: string,
+export async function updateContent(
+  db: CmsDatabase,
+  id: string,
+  input: ContentWrite,
 ) {
-  await kv.put(key, body, { metadata: { contentType } });
+  await prepareDatabase(db);
+  const now = timestamp();
+  const result = await db
+    .prepare(
+      `UPDATE content SET
+        type = ?, slug = ?, title = ?, description = ?, date = ?, image = ?,
+        href = ?, body = ?, gallery = ?, alt = ?, caption = ?, sort_order = ?,
+        updated_at = ?
+       WHERE id = ?`,
+    )
+    .bind(
+      input.type,
+      input.slug,
+      input.title,
+      input.description,
+      input.date,
+      input.image,
+      input.href,
+      JSON.stringify(input.body),
+      JSON.stringify(input.gallery),
+      input.alt,
+      input.caption,
+      input.sortOrder,
+      now,
+      id,
+    )
+    .run();
+  if (!result.meta?.changes) return null;
+  return getContent(db, id);
 }
 
-export async function getMedia(kv: CmsKv, key: string) {
-  const result = await kv.getWithMetadata(key, { type: "arrayBuffer" });
-  if (!result.value) return null;
-  return {
-    body: result.value,
-    contentType: result.metadata?.contentType ?? "application/octet-stream",
-  };
+export async function deleteContent(db: CmsDatabase, id: string) {
+  await prepareDatabase(db);
+  const result = await db
+    .prepare("DELETE FROM content WHERE id = ?")
+    .bind(id)
+    .run();
+  return Boolean(result.meta?.changes);
 }
