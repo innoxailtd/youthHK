@@ -52,6 +52,8 @@
 }
 
 :root {
+  --font-noto-sans-tc: "Noto Sans TC";
+  --font-noto-serif-tc: "Noto Serif TC";
   --background: #fbfaf9;
   --foreground: #171717;
   --card: #ffffff;

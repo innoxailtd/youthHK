@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Noto_Sans_TC, Noto_Serif_TC } from "next/font/google";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -8,19 +7,8 @@ import { site } from "@/lib/data/site";
 
 import "./globals.css";
 
-const notoSansTc = Noto_Sans_TC({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-noto-sans-tc",
-  display: "swap",
-});
-
-const notoSerifTc = Noto_Serif_TC({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "900"],
-  variable: "--font-noto-serif-tc",
-  display: "swap",
-});
+const fontStylesheet =
+  "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@500;600;700;900&display=swap";
 
 export const metadata: Metadata = {
   title: {
@@ -32,10 +20,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="zh-Hant"
-      className={`${notoSansTc.variable} ${notoSerifTc.variable} h-full`}
-    >
+    <html lang="zh-Hant" className="h-full">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link rel="stylesheet" href={fontStylesheet} />
+      </head>
       <body className="flex min-h-full flex-col">
         <SiteHeader />
         <main className="flex-1">{children}</main>
