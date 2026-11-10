@@ -21,9 +21,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { contentItemsToGallery } from "@/lib/cms/types";
+import { useCmsContent } from "@/lib/cms/use-cms-content";
 import { gallery } from "@/lib/data/gallery";
 
 export function PhotoGallery() {
+  const photos = useCmsContent("gallery", gallery, contentItemsToGallery);
   const [active, setActive] = useState<(typeof gallery)[number] | null>(null);
 
   return (
@@ -32,7 +35,7 @@ export function PhotoGallery() {
         <SectionHeading eyebrow="GALLERY" title="相片集" />
         <Carousel opts={{ align: "start", loop: true }}>
           <CarouselContent>
-            {gallery.map((item) => (
+            {photos.map((item) => (
               <CarouselItem
                 key={item.src}
                 className="basis-1/2 sm:basis-1/3 md:basis-1/4"

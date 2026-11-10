@@ -15,7 +15,11 @@ export function ArticleList({
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
-        <Link key={item.slug} href={`${basePath}/${item.slug}`} className="group">
+        <Link
+          key={item.slug}
+          href={`${basePath}/view?slug=${encodeURIComponent(item.slug)}`}
+          className="group"
+        >
           <Card className="h-full gap-4 overflow-hidden py-0 shadow-none transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-primary/25 group-hover:shadow-xl group-hover:shadow-foreground/8">
             <div className="relative aspect-16/10 overflow-hidden">
               <Image

@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-在 `.env.local` 填入 `RESEND_API_KEY`、`JOIN_FROM_EMAIL` 与 `JOIN_TO_EMAIL` 后，线上入会表单才会真正发信。
+在 `.dev.vars` 填入 `RESEND_API_KEY`、`JOIN_FROM_EMAIL`、`JOIN_TO_EMAIL`、`ADMIN_PASSWORD` 与 `ADMIN_SESSION_SECRET`。`/admin` 用来管理首页 Banner、最新动态、最新会讯和相片集。
 
 ## 主要页面
 
@@ -23,3 +23,4 @@ npm run dev
 - `/join` 线上入会
 - `/forms/membership-application.pdf` 会员／义工申请表
 - `/contact` 联络我们
+- `/admin` 内容后台
